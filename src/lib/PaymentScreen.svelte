@@ -8,11 +8,13 @@
         currentScreen,
         orderDetails,
         ordersHistory,
+        loyaltyPoints,
     } from "./store";
 
     let processing = false;
     let success = false;
     let orderId = null;
+    let earnedPoints = 0; // Track earned points
 
     let phone = "";
     let notes = "";
@@ -459,6 +461,17 @@
                 <p class="mt-4 text-xs text-gray-500">
                     يرجى إبراز هذا الرمز للموظف
                 </p>
+
+                {#if earnedPoints > 0}
+                    <div
+                        class="mt-4 bg-yellow-400/10 border border-yellow-400/20 p-3 rounded-xl flex items-center justify-center gap-2"
+                    >
+                        <span class="text-xl">💎</span>
+                        <span class="text-yellow-400 font-bold"
+                            >حصلت على {earnedPoints} نقطة ولاء!</span
+                        >
+                    </div>
+                {/if}
             </div>
 
             <button

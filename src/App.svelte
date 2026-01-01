@@ -3,28 +3,40 @@
   import ServicesScreen from "./lib/ServicesScreen.svelte";
   import PaymentScreen from "./lib/PaymentScreen.svelte";
   import HistoryScreen from "./lib/HistoryScreen.svelte"; // Import History
-  import { currentScreen } from "./lib/store";
+  import { currentScreen, loyaltyPoints } from "./lib/store";
+  import { fade, fly } from "svelte/transition";
 </script>
 
 <main
-  class="min-h-screen w-full overflow-hidden relative font-sans text-white pb-20"
+  class="min-h-screen w-full overflow-hidden relative font-sans text-white pb-20 bg-[#0f172a]"
 >
   <!-- Decorative Background blobs (Adjusted for Dark Mode) -->
   <div
-    class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-purple-900/40 rounded-full blur-[120px] pointer-events-none"
+    class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-purple-900/40 rounded-full blur-[120px] pointer-events-none animate-pulse-slow"
   ></div>
   <div
-    class="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-900/40 rounded-full blur-[120px] pointer-events-none"
+    class="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-900/40 rounded-full blur-[120px] pointer-events-none animate-pulse-slow delay-1000"
   ></div>
 
+  <!-- Points Badge (Top Left) -->
+  {#if $currentScreen !== "start"}
+    <div
+      class="absolute top-4 left-4 z-50 flex items-center gap-2 glass-card px-3 py-1.5 rounded-full border border-yellow-500/30 bg-black/20"
+      transition:fly={{ y: -20 }}
+    >
+      <span class="text-xl">💎</span>
+      <span class="font-bold text-yellow-400 font-mono">{$loyaltyPoints}</span>
+    </div>
+  {/if}
+
   {#if $currentScreen === "start"}
-    <StartScreen />
+    <div in:fade out:fade><StartScreen /></div>
   {:else if $currentScreen === "services"}
-    <ServicesScreen />
+    <div in:fly={{ x: 200, duration: 300 }} out:fade><ServicesScreen /></div>
   {:else if $currentScreen === "payment"}
-    <PaymentScreen />
+    <div in:fly={{ x: 200, duration: 300 }} out:fade><PaymentScreen /></div>
   {:else if $currentScreen === "history"}
-    <HistoryScreen />
+    <div in:fly={{ x: -200, duration: 300 }} out:fade><HistoryScreen /></div>
   {/if}
 
   <!-- Bottom Navigation (Only show if not in start/payment/splash) -->
