@@ -11,13 +11,12 @@ export const miniapp = {
     getAuthCode: () => {
         return new Promise((resolve, reject) => {
             if (miniapp.isNative()) {
+                // Try without explicit scopes first (defaults to auth_base often)
                 window.my.getAuthCode({
-                    scopes: ['auth_base'], // Trying simplest scope first
                     success: (res) => resolve(res),
                     fail: (err) => {
-                        // Try to extract meaningful error message
                         const msg = err.errorMessage || err.error || JSON.stringify(err);
-                        alert('Auth Failed (Scope: auth_base): ' + msg);
+                        alert('Auth Failed (No Scopes): ' + msg);
                         reject(err);
                     },
                 });
