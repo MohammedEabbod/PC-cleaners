@@ -40,9 +40,6 @@
                     alert("فشل الاتصال بالسيرفر، سيتم استخدام وضع الضيف");
                     userData = { id: "guest_" + Date.now(), name: "Guest" };
                 }
-            } else {
-                // Dev Mock
-                userData = { id: "dev_user_123", name: "Dev User" };
             }
 
             user.set(userData);

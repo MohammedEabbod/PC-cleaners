@@ -1,6 +1,11 @@
 export const miniapp = {
     // Check if running in Hylid/SuperQi environment
-    isNative: () => typeof window !== 'undefined' && window.my,
+    isNative: () => {
+        const isNative = typeof window !== 'undefined' && (window.my || window.m_y);
+        // Uncomment below to debug on device if needed
+        // if (!isNative) alert('Not Native Environment: window.my is undefined');
+        return isNative;
+    },
 
     // Authentication
     getAuthCode: () => {
@@ -12,11 +17,10 @@ export const miniapp = {
                     fail: (err) => reject(err),
                 });
             } else {
-                // Mock for Dev
-                console.log('[Dev] Mocking Auth Code...');
-                setTimeout(() => {
-                    resolve({ authCode: 'mock_auth_code_123' });
-                }, 1000);
+                // If not native, REJECT so we know it's not working, instead of fake success
+                console.warn('Not in Native SuperQi Environment');
+                alert('عذراً، هذا التطبيق يعمل فقط داخل تطبيق Super Qi');
+                reject(new Error('Not Native Environment'));
             }
         });
     },
@@ -30,15 +34,8 @@ export const miniapp = {
                     fail: (err) => reject(err),
                 });
             } else {
-                // Mock for Dev
-                console.log('[Dev] Mocking Location...');
-                setTimeout(() => {
-                    resolve({
-                        latitude: 33.3152,
-                        longitude: 44.3661,
-                        address: 'Baghdad, Mansour',
-                    });
-                }, 1500);
+                alert('خدمة الموقع غير متاحة في المتصفح');
+                reject(new Error('Location not supported in browser'));
             }
         });
     },
@@ -53,11 +50,8 @@ export const miniapp = {
                     fail: (err) => reject(err),
                 });
             } else {
-                // Mock for Dev
-                console.log('[Dev] Mocking Payment for URL:', paymentUrl);
-                setTimeout(() => {
-                    resolve({ resultCode: '9000' }); // 9000 is success in Alipay/Hylid standards
-                }, 2000);
+                alert('الدفع غير متاح في المتصفح');
+                reject(new Error('Payment not supported in browser'));
             }
         });
     },
@@ -71,8 +65,8 @@ export const miniapp = {
                     fail: (err) => reject(err),
                 });
             } else {
-                console.log('[Dev] Mocking Scan...');
-                resolve({ code: 'mock_qr_code' });
+                alert('الماسح الضوئي غير متاح');
+                reject(new Error('Scan not supported'));
             }
         });
     }
