@@ -12,10 +12,12 @@ export const miniapp = {
         return new Promise((resolve, reject) => {
             if (miniapp.isNative()) {
                 window.my.getAuthCode({
-                    scopes: ['auth_base', 'USER_ID'],
+                    scopes: ['auth_base'], // Trying simplest scope first
                     success: (res) => resolve(res),
                     fail: (err) => {
-                        alert('Auth Failed (Scopes: auth_base, USER_ID): ' + JSON.stringify(err));
+                        // Try to extract meaningful error message
+                        const msg = err.errorMessage || err.error || JSON.stringify(err);
+                        alert('Auth Failed (Scope: auth_base): ' + msg);
                         reject(err);
                     },
                 });
