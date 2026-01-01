@@ -5,6 +5,7 @@
     serviceMode,
     currentScreen,
     locationData,
+    showToast,
   } from "./store";
 
   const services = [
@@ -40,7 +41,7 @@
         locationData.set(loc);
       } catch (e) {
         console.error("Location failed", e);
-        alert("تعذر تحديد الموقع. يرجى تفعيل الـ GPS.");
+        showToast("تعذر تحديد الموقع. يرجى تفعيل الـ GPS.", "error");
         serviceMode.set("shop"); // revert
       } finally {
         loadingLoc = false;
@@ -52,7 +53,8 @@
 
   function select(pkg) {
     if ($serviceMode === "home" && !$locationData) {
-      alert("يرجى الانتظار حتى يتم تحديد الموقع");
+      showToast("يرجى الانتظار حتى يتم تحديد الموقع", "info");
+      serviceMode.set("home"); // Force retry
       return;
     }
     selectedService.set(pkg);
@@ -103,10 +105,44 @@
 
 <div class="px-4 py-6 w-full max-w-md mx-auto pb-24 relative z-10">
   <h2
-    class="text-3xl font-bold text-white text-center mb-8 tracking-tight drop-shadow-lg"
+    class="text-3xl font-bold text-white text-center mb-6 tracking-tight drop-shadow-lg"
   >
     اختر باقة التنظيف
   </h2>
+
+  <!-- Mode Selector (Moved to Top for Better UX) -->
+  <div
+    class="glass-card p-1.5 rounded-2xl flex mb-8 relative overflow-hidden ring-1 ring-white/10"
+  >
+    <button
+      class="flex-1 py-3 rounded-xl text-sm font-bold transition-all duration-300 relative z-10 flex flex-col items-center justify-center gap-1
+      {$serviceMode === 'shop'
+        ? 'bg-blue-600 text-white shadow-lg'
+        : 'text-gray-400 hover:text-white hover:bg-white/5'}"
+      on:click={() => setMode("shop")}
+    >
+      <span>🏢 داخل المركز</span>
+    </button>
+    <button
+      class="flex-1 py-3 rounded-xl text-sm font-bold transition-all duration-300 flex flex-col items-center justify-center gap-1 relative z-10
+      {$serviceMode === 'home'
+        ? 'bg-blue-600 text-white shadow-lg'
+        : 'text-gray-400 hover:text-white hover:bg-white/5'}"
+      on:click={() => setMode("home")}
+    >
+      <div class="flex items-center gap-2">
+        {#if loadingLoc}
+          <span
+            class="w-3 h-3 border-2 border-white/80 border-t-transparent rounded-full animate-spin"
+          ></span>
+        {/if}
+        <span>🏠 خدمة منزلية</span>
+      </div>
+      <span class="text-[10px] opacity-80 font-mono text-blue-200"
+        >+5,000 IQD</span
+      >
+    </button>
+  </div>
 
   <!-- Packages -->
   <div class="space-y-6 mb-10">
@@ -154,34 +190,6 @@
         </div>
       </button>
     {/each}
-  </div>
-
-  <!-- Mode Selector -->
-  <div class="glass-card p-1.5 rounded-2xl flex mb-6 relative overflow-hidden">
-    <!-- Animated Background Slider could be added here for extra polish -->
-    <button
-      class="flex-1 py-3 rounded-xl text-sm font-bold transition-all duration-300 relative z-10
-      {$serviceMode === 'shop'
-        ? 'bg-blue-600 text-white shadow-lg'
-        : 'text-gray-400 hover:text-white hover:bg-white/5'}"
-      on:click={() => setMode("shop")}
-    >
-      داخل المركز
-    </button>
-    <button
-      class="flex-1 py-3 rounded-xl text-sm font-bold transition-all duration-300 flex items-center justify-center gap-2 relative z-10
-      {$serviceMode === 'home'
-        ? 'bg-blue-600 text-white shadow-lg'
-        : 'text-gray-400 hover:text-white hover:bg-white/5'}"
-      on:click={() => setMode("home")}
-    >
-      {#if loadingLoc}
-        <span
-          class="w-4 h-4 border-2 border-white/80 border-t-transparent rounded-full animate-spin"
-        ></span>
-      {/if}
-      خدمة منزلية
-    </button>
   </div>
 
   {#if $serviceMode === "home" && $locationData}

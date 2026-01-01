@@ -30,6 +30,24 @@
         "مشكلة أخرى ❓",
     ];
 
+    // Redemption Logic
+    let usePoints = false;
+    let discount = 0;
+
+    $: canRedeem = $loyaltyPoints >= 100;
+    $: if (usePoints && canRedeem) {
+        discount = 5000;
+    } else {
+        discount = 0;
+        usePoints = false;
+    }
+
+    $: deliveryFee = $serviceMode === "home" ? 5000 : 0;
+    $: totalAmount = Math.max(
+        0,
+        ($selectedService?.price || 0) + deliveryFee - discount,
+    );
+
     async function pickImage() {
         try {
             const res = await miniapp.chooseImage();
@@ -43,9 +61,6 @@
         }
     }
 
-    $: deliveryFee = $serviceMode === "home" ? 5000 : 0;
-    $: totalAmount = ($selectedService?.price || 0) + deliveryFee;
-
     async function pay() {
         if (!phone && $serviceMode === "home") {
             alert("يرجى إدخال رقم الهاتف للتواصل");
@@ -54,6 +69,11 @@
 
         processing = true;
         try {
+            // Deduct Points if used
+            if (usePoints) {
+                loyaltyPoints.update((p) => p - 100);
+            }
+            // ... rest of API call logic uses 'totalAmount' so it will reflect discount
             // 1. Get Payment URL
             const authToken = $user?.token || "mock_token_for_dev";
             let paymentUrl;
@@ -190,6 +210,47 @@
                         <span class="text-blue-300 font-mono"
                             >+{deliveryFee.toLocaleString()}</span
                         >
+                    </div>
+                {/if}
+
+                {#if $loyaltyPoints > 0}
+                    <div
+                        class="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-xl p-3 border border-yellow-500/20 my-2"
+                    >
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xl">💎</span>
+                                <span class="text-sm text-yellow-200 font-bold"
+                                    >لديك {$loyaltyPoints} نقطة</span
+                                >
+                            </div>
+                            {#if canRedeem}
+                                <label
+                                    class="relative inline-flex items-center cursor-pointer"
+                                >
+                                    <input
+                                        type="checkbox"
+                                        bind:checked={usePoints}
+                                        class="sr-only peer"
+                                    />
+                                    <div
+                                        class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-500"
+                                    ></div>
+                                </label>
+                            {:else}
+                                <span class="text-[10px] text-gray-500"
+                                    >تحتاج 100 لاستخدامها</span
+                                >
+                            {/if}
+                        </div>
+                        {#if usePoints}
+                            <div
+                                class="flex justify-between text-sm text-green-400 font-bold"
+                            >
+                                <span>خصم نقاط الولاء</span>
+                                <span>-{discount.toLocaleString()}</span>
+                            </div>
+                        {/if}
                     </div>
                 {/if}
 

@@ -3,6 +3,7 @@
   import ServicesScreen from "./lib/ServicesScreen.svelte";
   import PaymentScreen from "./lib/PaymentScreen.svelte";
   import HistoryScreen from "./lib/HistoryScreen.svelte"; // Import History
+  import Toast from "./lib/Toast.svelte";
   import { currentScreen, loyaltyPoints } from "./lib/store";
   import { fade, fly } from "svelte/transition";
 </script>
@@ -10,6 +11,8 @@
 <main
   class="min-h-screen w-full overflow-hidden relative font-sans text-white pb-20 bg-[#0f172a]"
 >
+  <Toast />
+
   <!-- Decorative Background blobs (Adjusted for Dark Mode) -->
   <div
     class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-purple-900/40 rounded-full blur-[120px] pointer-events-none animate-pulse-slow"

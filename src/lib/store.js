@@ -21,3 +21,8 @@ export const locationData = writable(null);
 export const orderDetails = createPersistentStore('pc_cleaners_last_order', null);
 export const ordersHistory = createPersistentStore('pc_cleaners_history', []);
 export const loyaltyPoints = createPersistentStore('pc_cleaners_points', 0);
+export const toast = writable(null); // { message, type: 'success'|'error'|'info' }
+export const showToast = (msg, type = 'info') => {
+    toast.set({ message: msg, type });
+    setTimeout(() => toast.set(null), 3000);
+};
