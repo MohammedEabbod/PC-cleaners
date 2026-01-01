@@ -58,6 +58,47 @@
     selectedService.set(pkg);
     currentScreen.set("payment");
   }
+
+  // --- Map Login ---
+  import { tick } from "svelte";
+  let map;
+
+  $: if ($serviceMode === "home" && $locationData) {
+    initMap($locationData);
+  }
+
+  async function initMap(loc) {
+    await tick();
+    if (!document.getElementById("map")) return;
+
+    if (map) {
+      map.remove();
+      map = null;
+    }
+
+    if (window.L) {
+      map = L.map("map", {
+        center: [loc.latitude, loc.longitude],
+        zoom: 15,
+        zoomControl: false,
+        attributionControl: false,
+      });
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(
+        map,
+      );
+
+      // Blue dot marker
+      const icon = L.divIcon({
+        className: "custom-div-icon",
+        html: "<div style='background-color:#3b82f6; width: 14px; height: 14px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 15px rgba(59,130,246,0.6);'></div>",
+        iconSize: [14, 14],
+        iconAnchor: [7, 7],
+      });
+
+      L.marker([loc.latitude, loc.longitude], { icon: icon }).addTo(map);
+    }
+  }
 </script>
 
 <div class="px-4 py-6 w-full max-w-md mx-auto pb-24 relative z-10">
@@ -145,35 +186,44 @@
 
   {#if $serviceMode === "home" && $locationData}
     <div
-      class="glass-card p-4 rounded-2xl flex items-center gap-4 text-sm text-green-300 bg-green-900/20 border-green-500/30 animate-fade-in"
+      class="glass-card p-4 rounded-2xl animate-fade-in relative overflow-hidden"
     >
-      <div
-        class="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0"
-      >
-        <svg
-          class="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          ><path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-          /><path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-          /></svg
+      <div class="flex items-center justify-between mb-3 px-1">
+        <div class="flex items-center gap-2 text-green-400">
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            ><path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+            /><path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+            /></svg
+          >
+          <span class="font-bold text-sm">موقعك الحالي</span>
+        </div>
+        <button
+          class="text-xs text-blue-300 hover:text-white underline"
+          on:click={() => setMode("home")}>تحديث</button
         >
       </div>
-      <div>
-        <p class="font-bold text-white mb-0.5">تم تحديد موقعك بنجاح</p>
-        <p class="text-xs opacity-70 font-mono">
-          {$locationData.address || "GPS Coordinates Received"}
-        </p>
-      </div>
+
+      <!-- Map Container -->
+      <div
+        id="map"
+        class="w-full h-40 rounded-xl bg-gray-900 border border-white/10 z-0"
+      ></div>
+
+      <p class="text-xs text-gray-400 mt-3 font-mono text-center">
+        {$locationData.address || "GPS Coordinates Received"}
+      </p>
     </div>
   {/if}
 </div>

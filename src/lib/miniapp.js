@@ -15,8 +15,7 @@ export const miniapp = {
                     scopes: ['auth_base', 'USER_ID'],
                     success: (res) => resolve(res),
                     fail: (err) => {
-                        const msg = err.errorMessage || err.error || JSON.stringify(err);
-                        alert('Auth Failed: ' + msg);
+                        console.error('Auth Failed:', err);
                         reject(err);
                     },
                 });
@@ -73,5 +72,20 @@ export const miniapp = {
                 reject(new Error('Scan not supported'));
             }
         });
+    },
+
+    // Open Location in Native Map
+    openLocation: (lat, lng, name, address) => {
+        if (miniapp.isNative()) {
+            window.my.openLocation({
+                latitude: lat,
+                longitude: lng,
+                name: name || 'Location',
+                address: address || '',
+            });
+        } else {
+            const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+            window.open(url, '_blank');
+        }
     }
 };
