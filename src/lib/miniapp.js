@@ -12,9 +12,12 @@ export const miniapp = {
         return new Promise((resolve, reject) => {
             if (miniapp.isNative()) {
                 window.my.getAuthCode({
-                    scopes: ['auth_base', 'USER_ID'],
+                    scopes: ['auth_user'], // Changed from ['auth_base', 'USER_ID'] to standard 'auth_user'
                     success: (res) => resolve(res),
-                    fail: (err) => reject(err),
+                    fail: (err) => {
+                        alert('Auth Error: ' + JSON.stringify(err));
+                        reject(err);
+                    },
                 });
             } else {
                 // If not native, REJECT so we know it's not working, instead of fake success
