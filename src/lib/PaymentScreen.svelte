@@ -7,6 +7,7 @@
         locationData,
         currentScreen,
         orderDetails,
+        ordersHistory,
     } from "./store";
 
     let processing = false;
@@ -15,6 +16,30 @@
 
     let phone = "";
     let notes = "";
+
+    // New Feature State
+    let deviceImage = null;
+    let selectedProblem = null;
+    const problems = [
+        "حرارة عالية 🔥",
+        "بطء شديد 🐢",
+        "صوت مزعج للمروحة 🔊",
+        "تنظيف دوري فقط 🧹",
+        "مشكلة أخرى ❓",
+    ];
+
+    async function pickImage() {
+        try {
+            const res = await miniapp.chooseImage();
+            // In miniapp docs, res.apFilePaths is an array of local paths
+            if (res && res.apFilePaths && res.apFilePaths.length > 0) {
+                deviceImage = res.apFilePaths[0]; // Display the local path directly
+            }
+        } catch (e) {
+            console.error("Choose Image Failed", e);
+            // Optionally alert if strict
+        }
+    }
 
     $: deliveryFee = $serviceMode === "home" ? 5000 : 0;
     $: totalAmount = ($selectedService?.price || 0) + deliveryFee;
@@ -47,6 +72,10 @@
                                 mode: $serviceMode,
                                 phone: phone,
                                 notes: notes,
+                                problem: selectedProblem, // New
+                                image: deviceImage
+                                    ? "attached_local_path"
+                                    : null, // Just flagging it for now as we can't upload easily without multipart
                             }),
                         },
                     );
@@ -69,13 +98,21 @@
             if (res.resultCode === "9000") {
                 success = true;
                 orderId = "ORD-" + Math.floor(Math.random() * 1000000);
-                orderDetails.set({
+
+                const newOrder = {
                     id: orderId,
                     service: $selectedService,
                     mode: $serviceMode,
                     total: totalAmount,
                     date: new Date().toISOString(),
-                });
+                    status: "pending", // Initial Status
+                    statusText: "بانتظار الموافقة",
+                    phone: phone,
+                    problem: selectedProblem,
+                };
+
+                orderDetails.set(newOrder);
+                ordersHistory.update((h) => [newOrder, ...h]);
             } else {
                 alert("تم إلغاء الدفع");
             }
@@ -167,6 +204,87 @@
 
             <!-- Inputs -->
             <div class="space-y-4">
+                <!-- Image Upload (Bonus) -->
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1.5 mr-1"
+                        >صورة الجهاز (اختياري)</label
+                    >
+                    <div class="flex gap-3">
+                        {#if deviceImage}
+                            <div
+                                class="relative w-20 h-20 rounded-xl overflow-hidden border border-white/20 group"
+                            >
+                                <img
+                                    src={deviceImage}
+                                    alt="Device"
+                                    class="w-full h-full object-cover"
+                                />
+                                <button
+                                    class="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                    on:click={() => (deviceImage = null)}
+                                >
+                                    <svg
+                                        class="w-5 h-5 text-red-400"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                        ><path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M6 18L18 6M6 6l12 12"
+                                        /></svg
+                                    >
+                                </button>
+                            </div>
+                        {:else}
+                            <button
+                                class="w-20 h-20 rounded-xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center text-gray-500 hover:text-blue-400 hover:border-blue-400/50 hover:bg-blue-400/5 transition-all gap-1"
+                                on:click={pickImage}
+                            >
+                                <svg
+                                    class="w-6 h-6"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                    ><path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="1.5"
+                                        d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+                                    /><path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="1.5"
+                                        d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
+                                    /></svg
+                                >
+                                <span class="text-[9px]">أضف صورة</span>
+                            </button>
+                        {/if}
+                    </div>
+                </div>
+
+                <!-- Problem Description -->
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1.5 mr-1"
+                        >وصف المشكلة</label
+                    >
+                    <div class="grid grid-cols-2 gap-2 mb-2">
+                        {#each problems as p}
+                            <button
+                                class="text-xs py-2 px-3 rounded-lg border transition-all text-right
+                                {selectedProblem === p
+                                    ? 'bg-blue-600 border-blue-500 text-white'
+                                    : 'bg-white/5 border-white/5 text-gray-400 hover:bg-white/10'}"
+                                on:click={() => (selectedProblem = p)}
+                            >
+                                {p}
+                            </button>
+                        {/each}
+                    </div>
+                </div>
+
                 <div>
                     <label class="block text-xs text-gray-400 mb-1.5 mr-1"
                         >رقم الهاتف (للتواصل)</label
@@ -186,7 +304,7 @@
                     <textarea
                         bind:value={notes}
                         rows="2"
-                        placeholder="مثال: الحاسبة تفصل شحن، أو العنوان بالتفصيل..."
+                        placeholder="تفاصيل أخرى..."
                         class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 focus:bg-blue-500/10 transition-all text-right text-sm"
                     ></textarea>
                 </div>

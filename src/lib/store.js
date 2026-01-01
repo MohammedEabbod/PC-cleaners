@@ -19,3 +19,4 @@ export const selectedService = writable(null);
 export const serviceMode = writable('shop'); // shop, home
 export const locationData = writable(null);
 export const orderDetails = createPersistentStore('pc_cleaners_last_order', null);
+export const ordersHistory = createPersistentStore('pc_cleaners_history', []);

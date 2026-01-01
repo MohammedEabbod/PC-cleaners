@@ -74,6 +74,36 @@ export const miniapp = {
         });
     },
 
+    // Choose Image
+    chooseImage: () => {
+        return new Promise((resolve, reject) => {
+            if (miniapp.isNative()) {
+                window.my.chooseImage({
+                    count: 1,
+                    success: (res) => resolve(res),
+                    fail: (err) => reject(err),
+                });
+            } else {
+                // Mock for Browser
+                // Simulate picking an image
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.onchange = (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (evt) => {
+                            resolve({ apFilePaths: [evt.target.result] });
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                };
+                input.click();
+            }
+        });
+    },
+
     // Open Location in Native Map
     openLocation: (lat, lng, name, address) => {
         if (miniapp.isNative()) {
