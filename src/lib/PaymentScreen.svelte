@@ -13,10 +13,21 @@
     let success = false;
     let orderId = null;
 
+    let phone = "";
+    let notes = "";
+
+    $: deliveryFee = $serviceMode === "home" ? 5000 : 0;
+    $: totalAmount = ($selectedService?.price || 0) + deliveryFee;
+
     async function pay() {
+        if (!phone && $serviceMode === "home") {
+            alert("يرجى إدخال رقم الهاتف للتواصل");
+            return;
+        }
+
         processing = true;
         try {
-            // 1. Get Payment URL from Backend (as per Docs)
+            // 1. Get Payment URL
             const authToken = $user?.token || "mock_token_for_dev";
             let paymentUrl;
 
@@ -31,8 +42,11 @@
                                 Authorization: authToken,
                             },
                             body: JSON.stringify({
-                                amount: $selectedService.price,
+                                amount: totalAmount, // Send Total
                                 serviceId: $selectedService.id,
+                                mode: $serviceMode,
+                                phone: phone,
+                                notes: notes,
                             }),
                         },
                     );
@@ -40,19 +54,17 @@
                     paymentUrl = data.url;
                 } catch (apiErr) {
                     console.error("Payment API Failed", apiErr);
-                    alert("فشل إنشاء طلب الدفع مع السيرفر");
+                    alert("فشل إنشاء طلب الدفع");
                     processing = false;
                     return;
                 }
             } else {
-                // Dev Mock URL
-                paymentUrl = "https://www.wallet.com/cashier?orderId=mock_123";
+                paymentUrl =
+                    "https://www.wallet.com/cashier?orderId=mock_" + Date.now();
             }
 
             // 2. Call Native Payment
             const res = await miniapp.tradePay(paymentUrl);
-
-            console.log("Payment Result:", res);
 
             if (res.resultCode === "9000") {
                 success = true;
@@ -61,14 +73,15 @@
                     id: orderId,
                     service: $selectedService,
                     mode: $serviceMode,
+                    total: totalAmount,
                     date: new Date().toISOString(),
                 });
             } else {
-                alert("Payment Failed or Cancelled");
+                alert("تم إلغاء الدفع");
             }
         } catch (e) {
             console.error(e);
-            alert("Payment Error");
+            alert("حدث خطأ غير متوقع");
         } finally {
             processing = false;
         }
@@ -80,62 +93,130 @@
     }
 </script>
 
-<div class="px-4 py-6 w-full max-w-md mx-auto h-full flex flex-col pt-10">
+<div class="px-4 py-6 w-full max-w-md mx-auto h-full flex flex-col pt-4">
     {#if !success}
-        <h2
-            class="text-3xl font-bold text-white text-center mb-8 drop-shadow-md"
-        >
-            تأكيد الحجز
-        </h2>
+        <div class="flex items-center justify-between mb-6">
+            <button
+                class="text-white/70 hover:text-white"
+                on:click={() => currentScreen.set("services")}
+            >
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-6 w-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M9 5l7 7-7 7"
+                    />
+                </svg>
+            </button>
+            <h2 class="text-2xl font-bold text-white">تأكيد الطلب</h2>
+            <div class="w-6"></div>
+        </div>
 
         <div
-            class="glass-card p-8 rounded-[2rem] flex-grow mb-8 flex flex-col relative z-10 border-t border-white/20"
+            class="glass-card p-6 rounded-[2rem] flex-grow mb-4 flex flex-col relative z-10 border-t border-white/20 overflow-y-auto"
         >
-            <div class="space-y-6">
-                <div class="flex justify-between border-b border-white/10 pb-4">
-                    <span class="text-gray-400 font-medium"
-                        >الخدمة المختارة</span
-                    >
-                    <span class="font-bold text-white text-lg"
-                        >{$selectedService?.name}</span
+            <!-- Receipt Header -->
+            <div class="text-center mb-6 pb-6 border-b border-white/10">
+                <div class="text-gray-400 text-sm mb-1">الخدمة المختارة</div>
+                <div class="text-xl font-bold text-white">
+                    {$selectedService?.name}
+                </div>
+                <div class="text-blue-300 text-sm mt-1">
+                    {$serviceMode === "home"
+                        ? "🏠 خدمة منزلية"
+                        : "🏢 داخل المركز"}
+                </div>
+            </div>
+
+            <!-- Breakdown -->
+            <div class="space-y-3 mb-6">
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-400">سعر الخدمة</span>
+                    <span class="text-white font-mono"
+                        >{$selectedService?.price.toLocaleString()}</span
                     >
                 </div>
 
-                <div class="flex justify-between border-b border-white/10 pb-4">
-                    <span class="text-gray-400 font-medium">نوع الخدمة</span>
-                    <span class="font-bold text-white">
-                        {$serviceMode === "home"
-                            ? "🏠 خدمة منزلية"
-                            : "🏢 في المركز"}
-                    </span>
-                </div>
-
-                {#if $serviceMode === "home" && $locationData}
-                    <div class="flex flex-col border-b border-white/10 pb-4">
-                        <span class="text-gray-400 mb-2 font-medium"
-                            >عنوان الاستلام</span
+                {#if deliveryFee > 0}
+                    <div class="flex justify-between text-sm">
+                        <span class="text-blue-300">أجور نقل (خدمة منزلية)</span
                         >
-                        <span
-                            class="text-xs text-blue-200 bg-blue-500/10 p-3 rounded-xl border border-blue-500/20 leading-relaxed"
+                        <span class="text-blue-300 font-mono"
+                            >+{deliveryFee.toLocaleString()}</span
                         >
-                            {$locationData.address ||
-                                $locationData.latitude +
-                                    ", " +
-                                    $locationData.longitude}
-                        </span>
                     </div>
                 {/if}
 
-                <div class="flex justify-between pt-4 items-end">
-                    <span class="text-gray-400 font-medium mb-1"
-                        >المجموع الكلي</span
-                    >
-                    <span class="text-3xl font-bold text-blue-400"
-                        >{$selectedService?.price.toLocaleString()}<span
-                            class="text-sm text-gray-500 ml-1">IQD</span
-                        ></span
-                    >
+                <div
+                    class="border-t border-dashed border-white/20 my-2 pt-2 flex justify-between items-end"
+                >
+                    <span class="text-white font-bold">المجموع الكلي</span>
+                    <span class="text-2xl font-bold text-green-400 font-mono">
+                        {totalAmount.toLocaleString()}
+                        <span class="text-xs text-gray-500">IQD</span>
+                    </span>
                 </div>
+            </div>
+
+            <!-- Inputs -->
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1.5 mr-1"
+                        >رقم الهاتف (للتواصل)</label
+                    >
+                    <input
+                        type="tel"
+                        bind:value={phone}
+                        placeholder="0770xxxxxxx"
+                        class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 focus:bg-blue-500/10 transition-all font-mono text-right"
+                    />
+                </div>
+
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1.5 mr-1"
+                        >ملاحظات إضافية (اختياري)</label
+                    >
+                    <textarea
+                        bind:value={notes}
+                        rows="2"
+                        placeholder="مثال: الحاسبة تفصل شحن، أو العنوان بالتفصيل..."
+                        class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 focus:bg-blue-500/10 transition-all text-right text-sm"
+                    ></textarea>
+                </div>
+
+                {#if $serviceMode === "home" && $locationData}
+                    <div
+                        class="bg-blue-500/10 rounded-xl p-3 flex items-start gap-3 border border-blue-500/20"
+                    >
+                        <svg
+                            class="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                            />
+                        </svg>
+                        <div class="text-xs text-gray-300 leading-relaxed">
+                            سيتم إرسال الفني إلى: <br />
+                            <span class="text-white font-semibold"
+                                >{$locationData.address ||
+                                    "إحداثيات الخريطة المحددة"}</span
+                            >
+                        </div>
+                    </div>
+                {/if}
             </div>
         </div>
 
