@@ -12,10 +12,10 @@ export const miniapp = {
         return new Promise((resolve, reject) => {
             if (miniapp.isNative()) {
                 window.my.getAuthCode({
-                    scopes: ['auth_user'], // Changed from ['auth_base', 'USER_ID'] to standard 'auth_user'
+                    scopes: ['auth_base', 'USER_ID'],
                     success: (res) => resolve(res),
                     fail: (err) => {
-                        alert('Auth Error: ' + JSON.stringify(err));
+                        alert('Auth Failed (Scopes: auth_base, USER_ID): ' + JSON.stringify(err));
                         reject(err);
                     },
                 });
